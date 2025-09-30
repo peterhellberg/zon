@@ -1,0 +1,10 @@
+// Comment before object
+.{
+    .field = "with a string", // Trailing comment
+
+    // Comment between fields
+
+    .another = .{
+        .value = .{ 1, 2, 3 },
+    },
+}
