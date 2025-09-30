@@ -51,7 +51,7 @@ func run(v Example) error {
 	}
 
 	fmt.Println(string(data))
-	// Output: {.name = "Peter", .age = 42}
+	// Output: .{.name = "Peter", .age = 42}
 
 	var out map[string]any
 
@@ -99,7 +99,7 @@ func run(v Example) error {
 	}
 
 	fmt.Println(buf.String())
-	// Output: {.name = "Peter"}
+	// Output: .{.name = "Peter"}
 
 	var out Example
 
@@ -127,7 +127,7 @@ func run(v Example) error {
 	}
 
 	fmt.Println(buf.String())
-	// Output: {.name = "Peter"}
+	// Output: .{.name = "Peter"}
 
 	var out Example
 
