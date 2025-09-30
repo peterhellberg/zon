@@ -81,18 +81,46 @@ func marshal(v reflect.Value, b *bytes.Buffer) error {
 				if f.PkgPath != "" {
 					continue
 				}
+
+				tag := f.Tag.Get("zon")
+
+				var name string
+				var omitempty bool
+
+				if tag == "" {
+					name = f.Name
+				} else {
+					parts := strings.Split(tag, ",")
+					if parts[0] != "" {
+						name = strings.TrimSpace(parts[0])
+					} else {
+						name = f.Name
+					}
+
+					for _, instr := range parts[1:] {
+						if strings.TrimSpace(instr) == "omitempty" {
+							omitempty = true
+						}
+					}
+				}
+
+				fv := v.Field(i)
+
+				if omitempty && isEmptyValue(fv) {
+					continue // skip empty field
+				}
+
 				if !first {
 					w(", ")
 				}
+
 				first = false
-				name := f.Tag.Get("zon")
-				if name == "" {
-					name = f.Name
-				}
+
 				wb('.')
 				w(name)
 				w(" = ")
-				if err := marshal(v.Field(i), b); err != nil {
+
+				if err := marshal(fv, b); err != nil {
 					return err
 				}
 			}
@@ -109,4 +137,31 @@ func marshal(v reflect.Value, b *bytes.Buffer) error {
 	}
 
 	return nil
+}
+
+func isEmptyValue(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Array, reflect.Slice, reflect.Map, reflect.String:
+		return v.Len() == 0
+	case reflect.Bool:
+		return !v.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return v.Int() == 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return v.Uint() == 0
+	case reflect.Float32, reflect.Float64:
+		return v.Float() == 0
+	case reflect.Interface, reflect.Pointer:
+		return v.IsNil()
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			if !isEmptyValue(v.Field(i)) {
+				return false
+			}
+		}
+
+		return true
+	default:
+		return false
+	}
 }
