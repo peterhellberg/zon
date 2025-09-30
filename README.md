@@ -206,6 +206,8 @@ $ cat testdata/comments.zon | tee /dev/stderr | zon -j
         .value = .{ "first", 2, false },
     },
 }
+```
+```json
 {"another":{"value":["first",2,false]},"field":"with a string"}
 ```
 
