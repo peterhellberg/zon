@@ -336,7 +336,7 @@ func (p *parser) parseSliceDynamic(out *[]any) error {
 			return err
 		}
 
-		elems = append(elems, elem)
+		elems = append(elems, elem.Interface())
 
 		p.skipWhitespace()
 
