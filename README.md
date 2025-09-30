@@ -194,7 +194,20 @@ $ cat testdata/build.zig.zon | zon -j | jq
 > [!TIP]
 > `jq` in the example above is <https://jqlang.org/>
 
+```console
+$ cat testdata/comments.zon | tee /dev/stderr | zon -j
+// Comment before object
+.{
+    .field = "with a string", // Trailing comment
 
+    // Comment between fields
+
+    .another = .{
+        .value = .{ "first", 2, false },
+    },
+}
+{"another":{"value":["first",2,false]},"field":"with a string"}
+```
 
 ## License
 
