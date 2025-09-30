@@ -1,12 +1,15 @@
-# zon - Zig Zon encoding/decoding for Go ⚡
+# ZON encoding/decoding for Go ⚡
 
-`zon` is a Go library for marshaling and unmarshaling [Zig Zon](https://ziglang.org/) data,
+`zon` is a Go library for marshaling and unmarshaling [ZON](https://ziglang.org/) data,
 similar in usage to `encoding/json`.
+
+> [!IMPORTANT]
+> This library is not yet battle-tested; consider it more of an experiment :)
 
 ## Features
 
-- Marshal Go primitives and structs into Zig Zon format
-- Unmarshal Zig Zon data into Go values
+- Marshal Go primitives and structs into ZON format
+- Unmarshal ZON data into Go values
 - Support for `Encoder` and `Decoder`
 - Handles booleans, numbers, strings, slices, maps, and structs
 
@@ -36,10 +39,7 @@ type Example struct {
 }
 
 func main() {
-	v := Example{
-		Name: "Alice",
-		Age:  30,
-	}
+	v := Example{Name: "Peter", Age: 42}
 
 	// Marshal to Zon
 	data, err := zon.Marshal(v)
@@ -49,8 +49,8 @@ func main() {
 
 	fmt.Println(string(data))
 
-	// Unmarshal from Zon
-	var out Example
+	// Unmarshal from Zon into a map
+	var out map[string]any
 
 	if err := zon.Unmarshal(data, &out); err != nil {
 		panic(err)
@@ -68,6 +68,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/peterhellberg/zon"
 )
@@ -77,22 +78,27 @@ type Example struct {
 }
 
 func main() {
+	v := Example{Name: "Peter"}
+
 	var buf bytes.Buffer
 
 	enc := zon.NewEncoder(&buf)
-	dec := zon.NewDecoder(&buf)
-
-	v := Example{Name: "Bob"}
 
 	if err := enc.Encode(v); err != nil {
 		panic(err)
 	}
 
+	fmt.Println(buf.String()) // Output: {.name = "Peter"}
+
 	var out Example
+
+	dec := zon.NewDecoder(&buf)
 
 	if err := dec.Decode(&out); err != nil {
 		panic(err)
 	}
+
+	fmt.Printf("%+v\n", out) // Output: {Name:Peter}
 }
 ```
 
