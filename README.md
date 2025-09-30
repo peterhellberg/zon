@@ -168,7 +168,7 @@ $ echo '{"langs":["Zig", "Go"],"none":null}' | zon | zq
 }
 ```
 
-> [!TIP]
+> [!NOTE]
 > `zq` in the example above is <https://codeberg.org/tensorush/zq>
 
 ### ZON to JSON
@@ -191,7 +191,7 @@ $ cat testdata/build.zig.zon | zon -j | jq
 }
 ```
 
-> [!TIP]
+> [!NOTE]
 > `jq` in the example above is <https://jqlang.org/>
 
 ```console
