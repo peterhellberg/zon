@@ -15,7 +15,9 @@ func Marshal(v interface{}) ([]byte, error) {
 		return nil, err
 	}
 
-	return b.Bytes(), nil
+	_, err := b.WriteString("\n")
+
+	return b.Bytes(), err
 }
 
 func marshal(v reflect.Value, b *bytes.Buffer) error {
@@ -39,21 +41,21 @@ func marshal(v reflect.Value, b *bytes.Buffer) error {
 		wb('"')
 		w(v.String())
 		wb('"')
-	case reflect.Slice, reflect.Array:
-		wb('[')
-		for i := 0; i < v.Len(); i++ {
-			if i > 0 {
-				w(", ")
-			}
-			if err := marshal(v.Index(i), b); err != nil {
-				return err
-			}
-		}
-		wb(']')
-	case reflect.Map, reflect.Struct:
-		w(".{") // <-- leading dot before opening brace
+	case reflect.Slice, reflect.Array, reflect.Map, reflect.Struct:
+		w(".{")
 		first := true
-		if v.Kind() == reflect.Map {
+		switch v.Kind() {
+		case reflect.Slice, reflect.Array:
+			for i := 0; i < v.Len(); i++ {
+				if !first {
+					w(", ")
+				}
+				first = false
+				if err := marshal(v.Index(i), b); err != nil {
+					return err
+				}
+			}
+		case reflect.Map:
 			for _, k := range v.MapKeys() {
 				if !first {
 					w(", ")
@@ -73,7 +75,7 @@ func marshal(v reflect.Value, b *bytes.Buffer) error {
 					return err
 				}
 			}
-		} else {
+		case reflect.Struct:
 			for i := 0; i < v.NumField(); i++ {
 				f := v.Type().Field(i)
 				if f.PkgPath != "" {
