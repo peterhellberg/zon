@@ -127,7 +127,9 @@ func (p *parser) parseDynamic() (reflect.Value, error) {
 			p.pos += 4
 
 			return reflect.ValueOf(true), nil
-		} else if bytes.HasPrefix(p.data[p.pos:], []byte("false")) {
+		}
+
+		if bytes.HasPrefix(p.data[p.pos:], []byte("false")) {
 			p.pos += 5
 
 			return reflect.ValueOf(false), nil
@@ -141,14 +143,10 @@ func (p *parser) parseDynamic() (reflect.Value, error) {
 
 		numStr := string(p.data[start:p.pos])
 
-		if len(numStr) == 0 {
-			return reflect.Value{}, fmt.Errorf("zon: invalid literal at pos %d", start)
-		}
-
 		if strings.ContainsAny(numStr, ".eE") {
 			f, err := strconv.ParseFloat(numStr, 64)
 			if err != nil {
-				return reflect.Value{}, fmt.Errorf("zon: invalid number literal at pos %d: %w", start, err)
+				return reflect.Value{}, fmt.Errorf("zon: invalid float literal at pos %d: %w", start, err)
 			}
 
 			return reflect.ValueOf(f), nil
@@ -156,7 +154,7 @@ func (p *parser) parseDynamic() (reflect.Value, error) {
 
 		i, err := strconv.ParseInt(numStr, 10, 64)
 		if err != nil {
-			return reflect.Value{}, fmt.Errorf("zon: invalid number literal at pos %d: %w", start, err)
+			return reflect.Value{}, fmt.Errorf("zon: invalid int literal at pos %d: %w", start, err)
 		}
 
 		return reflect.ValueOf(i), nil
@@ -387,6 +385,7 @@ func (p *parser) parseMap(v reflect.Value) error {
 		}
 
 		p.pos++
+
 		start := p.pos
 
 		for p.pos < len(p.data) && (unicode.IsLetter(rune(p.data[p.pos])) || unicode.IsDigit(rune(p.data[p.pos])) || p.data[p.pos] == '_') {
@@ -580,7 +579,7 @@ func (p *parser) parseMapDynamic(out map[string]any) error {
 			return err
 		}
 
-		out[key] = val
+		out[key] = val.Interface()
 
 		p.skipWhitespace()
 
