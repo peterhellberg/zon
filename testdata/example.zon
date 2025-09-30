@@ -1,6 +1,6 @@
 .{
     .field = "with a string",
     .another = .{
-        .value = .{ 1, 2, 3 },
+        .value = .{ "first", 2, false },
     },
 }
