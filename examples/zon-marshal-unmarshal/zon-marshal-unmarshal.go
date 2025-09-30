@@ -26,7 +26,7 @@ func run(v Example) error {
 	}
 
 	fmt.Println(string(data))
-	// Output: {.name = "Peter", .age = 42}
+	// Output: .{.name = "Peter", .age = 42}
 
 	var out map[string]any
 

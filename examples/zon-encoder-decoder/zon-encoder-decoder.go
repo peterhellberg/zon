@@ -27,7 +27,7 @@ func run(v Example) error {
 	}
 
 	fmt.Println(buf.String())
-	// Output: {.name = "Peter"}
+	// Output: .{.name = "Peter"}
 
 	var out Example
 
