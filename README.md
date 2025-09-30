@@ -144,6 +144,54 @@ func run(v Example) error {
 }
 ```
 
+## CLI
+
+This library also comes with a small CLI called `zon`
+which can be used to convert between **ZON** and **JSON**.
+
+### JSON to ZON
+
+```console
+$ echo '{"langs":["Zig", "Go"],"none":null}' | go run ./cmd/zon | zq
+```
+```zon
+.{
+    .langs = .{
+        "Zig",
+        "Go",
+    },
+    .none = null,
+}
+```
+
+> [!TIP]
+> `zq` in the example above is <https://codeberg.org/tensorush/zq>
+
+### ZON to JSON
+
+```console
+$ cat testdata/build.zig.zon | go run ./cmd/zon -j | jq
+```
+```json
+{
+  "dependencies": [],
+  "fingerprint": 11089329437232087000,
+  "minimum_zig_version": "0.16.0-dev.205+4c0127566",
+  "name": "testdata",
+  "paths": [
+    "build.zig",
+    "build.zig.zon",
+    "src"
+  ],
+  "version": "0.0.0"
+}
+```
+
+> [!TIP]
+> `jq` in the example above is <https://jqlang.org/>
+
+
+
 ## License
 
 MIT License
