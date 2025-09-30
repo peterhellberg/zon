@@ -10,13 +10,15 @@ import (
 
 func Marshal(v interface{}) ([]byte, error) {
 	var b bytes.Buffer
-	if err := enc(reflect.ValueOf(v), &b); err != nil {
+
+	if err := marshal(reflect.ValueOf(v), &b); err != nil {
 		return nil, err
 	}
+
 	return b.Bytes(), nil
 }
 
-func enc(v reflect.Value, b *bytes.Buffer) error {
+func marshal(v reflect.Value, b *bytes.Buffer) error {
 	w, wb := b.WriteString, b.WriteByte
 
 	if !v.IsValid() {
@@ -43,7 +45,7 @@ func enc(v reflect.Value, b *bytes.Buffer) error {
 			if i > 0 {
 				w(", ")
 			}
-			if err := enc(v.Index(i), b); err != nil {
+			if err := marshal(v.Index(i), b); err != nil {
 				return err
 			}
 		}
@@ -63,11 +65,11 @@ func enc(v reflect.Value, b *bytes.Buffer) error {
 						wb('.')
 					}
 					w(s)
-				} else if err := enc(k, b); err != nil {
+				} else if err := marshal(k, b); err != nil {
 					return err
 				}
 				w(" = ")
-				if err := enc(v.MapIndex(k), b); err != nil {
+				if err := marshal(v.MapIndex(k), b); err != nil {
 					return err
 				}
 			}
@@ -88,7 +90,7 @@ func enc(v reflect.Value, b *bytes.Buffer) error {
 				wb('.')
 				w(name)
 				w(" = ")
-				if err := enc(v.Field(i), b); err != nil {
+				if err := marshal(v.Field(i), b); err != nil {
 					return err
 				}
 			}
@@ -98,7 +100,7 @@ func enc(v reflect.Value, b *bytes.Buffer) error {
 		if v.IsNil() {
 			w("null")
 		} else {
-			return enc(v.Elem(), b)
+			return marshal(v.Elem(), b)
 		}
 	default:
 		return fmt.Errorf("zon: unsupported type %s", v.Type())
