@@ -34,6 +34,8 @@ import (
 type Example struct {
 	Name string `zon:"name"`
 	Age  int    `zon:"age"`
+	List []int  `zon:"list"`
+	Omit []int  `zon:"omit,omitempty"`
 }
 
 func main() {
@@ -51,7 +53,7 @@ func run(v Example) error {
 	}
 
 	fmt.Println(string(data))
-	// Output: .{.name = "Peter", .age = 42}
+	// Output: .{.name = "Peter", .age = 42, .list = .{}}
 
 	var out map[string]any
 
@@ -60,7 +62,7 @@ func run(v Example) error {
 	}
 
 	fmt.Printf("%+v\n", out)
-	// Output: map[age:42 name:Peter]
+	// Output: map[age:42 list:[] name:Peter]
 
 	return nil
 }
