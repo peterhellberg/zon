@@ -149,10 +149,14 @@ func run(v Example) error {
 This library also comes with a small CLI called `zon`
 which can be used to convert between **ZON** and **JSON**.
 
+```console
+$ go install https://github.com/peterhellberg/zon/cmd/zon@latest
+```
+
 ### JSON to ZON
 
 ```console
-$ echo '{"langs":["Zig", "Go"],"none":null}' | go run ./cmd/zon | zq
+$ echo '{"langs":["Zig", "Go"],"none":null}' | zon | zq
 ```
 ```zon
 .{
@@ -170,7 +174,7 @@ $ echo '{"langs":["Zig", "Go"],"none":null}' | go run ./cmd/zon | zq
 ### ZON to JSON
 
 ```console
-$ cat testdata/build.zig.zon | go run ./cmd/zon -j | jq
+$ cat testdata/build.zig.zon | zon -j | jq
 ```
 ```json
 {
