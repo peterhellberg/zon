@@ -15,9 +15,7 @@ similar in usage to `encoding/json`.
 
 ## Installation
 
-```console
-$ go get github.com/peterhellberg/zon
-```
+    go get -u github.com/peterhellberg/zon
 
 ## Usage
 
