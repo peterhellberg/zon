@@ -10,9 +10,6 @@ import (
 	"github.com/peterhellberg/zon"
 )
 
-type Encoder interface{ Encode(v any) error }
-type Decoder interface{ Decode(v any) error }
-
 func main() {
 	if err := run(os.Stdin, os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -21,7 +18,7 @@ func main() {
 }
 
 func run(r io.Reader, w io.Writer) error {
-	j := flag.Bool("json", false, "")
+	j := flag.Bool("j", false, "Convert ZON to JSON (default: false)")
 
 	flag.Parse()
 
@@ -31,6 +28,9 @@ func run(r io.Reader, w io.Writer) error {
 
 	return convert(json.NewDecoder(r), zon.NewEncoder(w))
 }
+
+type Decoder interface{ Decode(v any) error }
+type Encoder interface{ Encode(v any) error }
 
 func convert(dec Decoder, enc Encoder) error {
 	var v any
