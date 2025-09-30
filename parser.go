@@ -1,7 +1,6 @@
 package zon
 
 import (
-	"bytes"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -27,7 +26,7 @@ func (p *parser) parseValue(v reflect.Value) error {
 		return fmt.Errorf("zon: unexpected end of input")
 	}
 
-	if bytes.HasPrefix(p.data[p.pos:], []byte("null")) {
+	if strings.HasPrefix(string(p.data[p.pos:]), "null") {
 		p.pos += 4
 
 		if v.CanSet() {
@@ -80,95 +79,16 @@ func (p *parser) parseValue(v reflect.Value) error {
 	}
 }
 
-func (p *parser) parseDynamic() (reflect.Value, error) {
-	p.skipWhitespace()
-
-	if bytes.HasPrefix(p.data[p.pos:], []byte("null")) {
-		p.pos += 4
-
-		return reflect.Zero(reflect.TypeOf(nil)), nil
-	}
-
-	if p.pos >= len(p.data) {
-		return reflect.Value{}, fmt.Errorf("zon: unexpected end of input")
-	}
-
-	switch p.data[p.pos] {
-	case '.':
-		if p.pos+1 < len(p.data) && p.data[p.pos+1] == '{' {
-			m := make(map[string]any)
-
-			if err := p.parseMapDynamic(m); err != nil {
-				return reflect.Value{}, err
-			}
-
-			return reflect.ValueOf(m), nil
-		}
-
-		return reflect.Value{}, fmt.Errorf("zon: unexpected '.' at pos %d", p.pos)
-	case '[':
-		var slice []any
-
-		if err := p.parseSliceDynamic(&slice); err != nil {
-			return reflect.Value{}, err
-		}
-
-		return reflect.ValueOf(slice), nil
-	case '"':
-		var s string
-
-		if err := p.parseStringDynamic(&s); err != nil {
-			return reflect.Value{}, err
-		}
-
-		return reflect.ValueOf(s), nil
-	default:
-		if bytes.HasPrefix(p.data[p.pos:], []byte("true")) {
-			p.pos += 4
-
-			return reflect.ValueOf(true), nil
-		}
-
-		if bytes.HasPrefix(p.data[p.pos:], []byte("false")) {
-			p.pos += 5
-
-			return reflect.ValueOf(false), nil
-		}
-
-		start := p.pos
-
-		for p.pos < len(p.data) && (unicode.IsDigit(rune(p.data[p.pos])) || strings.ContainsRune(".-+eE", rune(p.data[p.pos]))) {
-			p.pos++
-		}
-
-		numStr := string(p.data[start:p.pos])
-
-		if strings.ContainsAny(numStr, ".eE") {
-			f, err := strconv.ParseFloat(numStr, 64)
-			if err != nil {
-				return reflect.Value{}, fmt.Errorf("zon: invalid float literal at pos %d: %w", start, err)
-			}
-
-			return reflect.ValueOf(f), nil
-		}
-
-		i, err := strconv.ParseInt(numStr, 10, 64)
-		if err != nil {
-			return reflect.Value{}, fmt.Errorf("zon: invalid int literal at pos %d: %w", start, err)
-		}
-
-		return reflect.ValueOf(i), nil
-	}
-}
-
 func (p *parser) parseBool(v reflect.Value) error {
-	if bytes.HasPrefix(p.data[p.pos:], []byte("true")) {
+	if strings.HasPrefix(string(p.data[p.pos:]), "true") {
 		v.SetBool(true)
+
 		p.pos += 4
 
 		return nil
-	} else if bytes.HasPrefix(p.data[p.pos:], []byte("false")) {
+	} else if strings.HasPrefix(string(p.data[p.pos:]), "false") {
 		v.SetBool(false)
+
 		p.pos += 5
 
 		return nil
@@ -233,6 +153,7 @@ func (p *parser) parseFloat(v reflect.Value) error {
 	}
 
 	v.SetFloat(f)
+
 	return nil
 }
 
@@ -242,6 +163,7 @@ func (p *parser) parseString(v reflect.Value) error {
 	}
 
 	p.pos++
+
 	start := p.pos
 
 	for p.pos < len(p.data) && p.data[p.pos] != '"' {
@@ -260,11 +182,11 @@ func (p *parser) parseString(v reflect.Value) error {
 }
 
 func (p *parser) parseSlice(v reflect.Value) error {
-	if p.data[p.pos] != '[' {
-		return fmt.Errorf("zon: expected '[' at pos %d", p.pos)
+	if p.data[p.pos] != '.' || p.pos+1 >= len(p.data) || p.data[p.pos+1] != '{' {
+		return fmt.Errorf("zon: expected '.{' at pos %d", p.pos)
 	}
 
-	p.pos++
+	p.pos += 2
 
 	slice := reflect.MakeSlice(v.Type(), 0, 0)
 
@@ -275,7 +197,7 @@ func (p *parser) parseSlice(v reflect.Value) error {
 			return fmt.Errorf("zon: unexpected end of slice")
 		}
 
-		if p.data[p.pos] == ']' {
+		if p.data[p.pos] == '}' {
 			p.pos++
 
 			break
@@ -293,14 +215,6 @@ func (p *parser) parseSlice(v reflect.Value) error {
 
 		if p.pos < len(p.data) && p.data[p.pos] == ',' {
 			p.pos++
-
-			p.skipWhitespace()
-
-			if p.pos < len(p.data) && p.data[p.pos] == ']' {
-				p.pos++
-
-				break
-			}
 		}
 	}
 
@@ -309,57 +223,8 @@ func (p *parser) parseSlice(v reflect.Value) error {
 	return nil
 }
 
-func (p *parser) parseSliceDynamic(out *[]any) error {
-	if p.data[p.pos] != '[' {
-		return fmt.Errorf("zon: expected '[' at pos %d", p.pos)
-	}
-
-	p.pos++
-
-	var elems []any
-
-	for {
-		p.skipWhitespace()
-
-		if p.pos >= len(p.data) {
-			return fmt.Errorf("zon: unexpected end of slice")
-		}
-
-		if p.data[p.pos] == ']' {
-			p.pos++
-
-			break
-		}
-
-		elem, err := p.parseDynamic()
-		if err != nil {
-			return err
-		}
-
-		elems = append(elems, elem.Interface())
-
-		p.skipWhitespace()
-
-		if p.pos < len(p.data) && p.data[p.pos] == ',' {
-			p.pos++
-
-			p.skipWhitespace()
-
-			if p.pos < len(p.data) && p.data[p.pos] == ']' {
-				p.pos++
-
-				break
-			}
-		}
-	}
-
-	*out = elems
-
-	return nil
-}
-
 func (p *parser) parseMap(v reflect.Value) error {
-	if !(p.data[p.pos] == '.' && p.pos+1 < len(p.data) && p.data[p.pos+1] == '{') {
+	if p.data[p.pos] != '.' || p.pos+1 >= len(p.data) || p.data[p.pos+1] != '{' {
 		return fmt.Errorf("zon: expected '.{' at pos %d", p.pos)
 	}
 
@@ -388,7 +253,9 @@ func (p *parser) parseMap(v reflect.Value) error {
 
 		start := p.pos
 
-		for p.pos < len(p.data) && (unicode.IsLetter(rune(p.data[p.pos])) || unicode.IsDigit(rune(p.data[p.pos])) || p.data[p.pos] == '_') {
+		for p.pos < len(p.data) && (unicode.IsLetter(rune(p.data[p.pos])) ||
+			unicode.IsDigit(rune(p.data[p.pos])) ||
+			p.data[p.pos] == '_') {
 			p.pos++
 		}
 
@@ -416,14 +283,6 @@ func (p *parser) parseMap(v reflect.Value) error {
 
 		if p.pos < len(p.data) && p.data[p.pos] == ',' {
 			p.pos++
-
-			p.skipWhitespace()
-
-			if p.pos < len(p.data) && p.data[p.pos] == '}' {
-				p.pos++
-
-				break
-			}
 		}
 	}
 
@@ -431,7 +290,9 @@ func (p *parser) parseMap(v reflect.Value) error {
 }
 
 func (p *parser) parseStruct(v reflect.Value) error {
-	if !(p.data[p.pos] == '.' && p.pos+1 < len(p.data) && p.data[p.pos+1] == '{') {
+	if p.data[p.pos] != '.' ||
+		p.pos+1 >= len(p.data) ||
+		p.data[p.pos+1] != '{' {
 		return fmt.Errorf("zon: expected '.{' at pos %d", p.pos)
 	}
 
@@ -459,7 +320,9 @@ func (p *parser) parseStruct(v reflect.Value) error {
 		p.pos++
 		start := p.pos
 
-		for p.pos < len(p.data) && (unicode.IsLetter(rune(p.data[p.pos])) || unicode.IsDigit(rune(p.data[p.pos])) || p.data[p.pos] == '_') {
+		for p.pos < len(p.data) && (unicode.IsLetter(rune(p.data[p.pos])) ||
+			unicode.IsDigit(rune(p.data[p.pos])) ||
+			p.data[p.pos] == '_') {
 			p.pos++
 		}
 
@@ -481,13 +344,11 @@ func (p *parser) parseStruct(v reflect.Value) error {
 
 		for i := 0; i < t.NumField(); i++ {
 			f := t.Field(i)
-
 			if f.PkgPath != "" {
 				continue
 			}
 
 			name := f.Tag.Get("zon")
-
 			if name == "" {
 				name = f.Name
 			}
@@ -501,9 +362,9 @@ func (p *parser) parseStruct(v reflect.Value) error {
 		}
 
 		if !found {
-			skip := reflect.New(reflect.TypeOf(new(any)).Elem()).Elem()
+			skip := reflect.New(reflect.TypeOf(new(interface{})).Elem()).Elem()
 
-			_ = p.parseValue(skip)
+			p.parseValue(skip)
 
 			continue
 		}
@@ -516,87 +377,170 @@ func (p *parser) parseStruct(v reflect.Value) error {
 
 		if p.pos < len(p.data) && p.data[p.pos] == ',' {
 			p.pos++
-
-			p.skipWhitespace()
-
-			if p.pos < len(p.data) && p.data[p.pos] == '}' {
-				p.pos++
-
-				break
-			}
 		}
 	}
 
 	return nil
 }
 
-func (p *parser) parseMapDynamic(out map[string]any) error {
-	if !(p.data[p.pos] == '.' && p.pos+1 < len(p.data) && p.data[p.pos+1] == '{') {
-		return fmt.Errorf("zon: expected '.{' at pos %d", p.pos)
+func (p *parser) parseDynamic() (reflect.Value, error) {
+	p.skipWhitespace()
+
+	if p.pos >= len(p.data) {
+		return reflect.Value{}, fmt.Errorf("zon: unexpected end of input")
 	}
 
-	p.pos += 2
+	if strings.HasPrefix(string(p.data[p.pos:]), "null") {
+		p.pos += 4
 
-	for {
+		return reflect.Zero(reflect.TypeOf(nil)), nil
+	}
+
+	if p.data[p.pos] == '.' && p.pos+1 < len(p.data) && p.data[p.pos+1] == '{' {
+		m := make(map[string]any)
+
+		p.pos += 2
 		p.skipWhitespace()
 
-		if p.pos >= len(p.data) {
-			return fmt.Errorf("zon: unexpected end of map")
+		isArray := true
+		if p.pos < len(p.data) && p.data[p.pos] == '.' {
+			isArray = false
 		}
 
-		if p.data[p.pos] == '}' {
-			p.pos++
+		if isArray {
+			var arr []any
 
-			break
+			for {
+				p.skipWhitespace()
+
+				if p.pos >= len(p.data) {
+					return reflect.Value{}, fmt.Errorf("zon: unexpected end of array")
+				}
+
+				if p.data[p.pos] == '}' {
+					p.pos++
+
+					break
+				}
+
+				elem, err := p.parseDynamic()
+				if err != nil {
+					return reflect.Value{}, err
+				}
+
+				arr = append(arr, elem.Interface())
+
+				p.skipWhitespace()
+
+				if p.pos < len(p.data) && p.data[p.pos] == ',' {
+					p.pos++
+				}
+			}
+
+			return reflect.ValueOf(arr), nil
+		} else {
+			for {
+				p.skipWhitespace()
+
+				if p.pos >= len(p.data) {
+					return reflect.Value{}, fmt.Errorf("zon: unexpected end of map")
+				}
+
+				if p.data[p.pos] == '}' {
+					p.pos++
+
+					break
+				}
+
+				if p.data[p.pos] != '.' {
+					return reflect.Value{}, fmt.Errorf("zon: expected '.' for map key at pos %d", p.pos)
+				}
+
+				p.pos++
+
+				start := p.pos
+
+				for p.pos < len(p.data) && (unicode.IsLetter(rune(p.data[p.pos])) ||
+					unicode.IsDigit(rune(p.data[p.pos])) ||
+					p.data[p.pos] == '_') {
+					p.pos++
+				}
+
+				key := string(p.data[start:p.pos])
+
+				p.skipWhitespace()
+
+				if p.pos >= len(p.data) || p.data[p.pos] != '=' {
+					return reflect.Value{}, fmt.Errorf("zon: expected '=' after key at pos %d", p.pos)
+				}
+
+				p.pos++
+
+				p.skipWhitespace()
+
+				val, err := p.parseDynamic()
+				if err != nil {
+					return reflect.Value{}, err
+				}
+
+				m[key] = val.Interface()
+
+				p.skipWhitespace()
+
+				if p.pos < len(p.data) && p.data[p.pos] == ',' {
+					p.pos++
+				}
+			}
+
+			return reflect.ValueOf(m), nil
+		}
+	}
+
+	switch p.data[p.pos] {
+	case '"':
+		var s string
+
+		if err := p.parseStringDynamic(&s); err != nil {
+			return reflect.Value{}, err
 		}
 
-		if p.data[p.pos] != '.' {
-			return fmt.Errorf("zon: expected '.' for map key at pos %d", p.pos)
-		}
+		return reflect.ValueOf(s), nil
+	default:
+		if strings.HasPrefix(string(p.data[p.pos:]), "true") {
+			p.pos += 4
 
-		p.pos++
+			return reflect.ValueOf(true), nil
+		} else if strings.HasPrefix(string(p.data[p.pos:]), "false") {
+			p.pos += 5
+
+			return reflect.ValueOf(false), nil
+		}
 
 		start := p.pos
 
-		for p.pos < len(p.data) && (unicode.IsLetter(rune(p.data[p.pos])) || unicode.IsDigit(rune(p.data[p.pos])) || p.data[p.pos] == '_') {
+		for p.pos < len(p.data) && (unicode.IsDigit(rune(p.data[p.pos])) ||
+			strings.ContainsRune(".-+eE", rune(p.data[p.pos]))) {
 			p.pos++
 		}
 
-		key := string(p.data[start:p.pos])
+		numStr := string(p.data[start:p.pos])
 
-		p.skipWhitespace()
-
-		if p.pos >= len(p.data) || p.data[p.pos] != '=' {
-			return fmt.Errorf("zon: expected '=' after key at pos %d", p.pos)
-		}
-
-		p.pos++
-
-		p.skipWhitespace()
-
-		val, err := p.parseDynamic()
-		if err != nil {
-			return err
-		}
-
-		out[key] = val.Interface()
-
-		p.skipWhitespace()
-
-		if p.pos < len(p.data) && p.data[p.pos] == ',' {
-			p.pos++
-
-			p.skipWhitespace()
-
-			if p.pos < len(p.data) && p.data[p.pos] == '}' {
-				p.pos++
-
-				break
+		if strings.ContainsAny(numStr, ".eE") {
+			f, err := strconv.ParseFloat(numStr, 64)
+			if err != nil {
+				return reflect.Value{}, fmt.Errorf("zon: invalid float literal at pos %d: %w", start, err)
 			}
-		}
-	}
 
-	return nil
+			return reflect.ValueOf(f), nil
+		}
+
+		i, err := strconv.ParseInt(numStr, 10, 64)
+		if err != nil {
+			return reflect.Value{}, fmt.Errorf("zon: invalid int literal at pos %d: %w", start, err)
+		}
+
+		return reflect.ValueOf(i), nil
+	}
 }
 
 func (p *parser) parseStringDynamic(out *string) error {
