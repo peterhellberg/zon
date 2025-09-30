@@ -6,7 +6,7 @@ type Encoder struct {
 	w io.Writer
 }
 
-func Encode(w io.Writer, v interface{}) error {
+func Encode(w io.Writer, v any) error {
 	return NewEncoder(w).Encode(v)
 }
 
@@ -14,7 +14,7 @@ func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{w: w}
 }
 
-func (e *Encoder) Encode(v interface{}) error {
+func (e *Encoder) Encode(v any) error {
 	data, err := Marshal(v)
 	if err != nil {
 		return err

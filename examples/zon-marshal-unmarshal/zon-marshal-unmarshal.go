@@ -30,13 +30,13 @@ func run(v Example) error {
 	fmt.Println(string(data))
 	// Output: .{.name = "Peter", .age = 42, .list = .{}}
 
-	var out map[string]any
+	var v2 map[string]any
 
-	if err := zon.Unmarshal(data, &out); err != nil {
+	if err := zon.Unmarshal(data, &v2); err != nil {
 		return err
 	}
 
-	fmt.Printf("%+v\n", out)
+	fmt.Printf("%+v\n", v2)
 	// Output: map[age:42 list:[] name:Peter]
 
 	return nil

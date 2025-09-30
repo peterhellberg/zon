@@ -5,7 +5,7 @@ import "testing"
 func TestMarshal(t *testing.T) {
 	for _, tt := range []struct {
 		name  string
-		value interface{}
+		value any
 	}{
 		{"bool true", true},
 		{"int", 42},

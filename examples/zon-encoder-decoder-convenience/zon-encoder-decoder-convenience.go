@@ -29,13 +29,13 @@ func run(v Example) error {
 	fmt.Println(buf.String())
 	// Output: .{.name = "Peter"}
 
-	var out Example
+	var v2 Example
 
-	if err := zon.Decode(&buf, &out); err != nil {
+	if err := zon.Decode(&buf, &v2); err != nil {
 		return err
 	}
 
-	fmt.Printf("%+v\n", out)
+	fmt.Printf("%+v\n", v2)
 	// Output: {Name:Peter}
 
 	return nil

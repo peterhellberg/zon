@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	var b bytes.Buffer
 
 	if err := marshal(reflect.ValueOf(v), &b); err != nil {

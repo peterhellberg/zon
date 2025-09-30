@@ -20,14 +20,14 @@ func TestEncoderDecoderRoundTrip(t *testing.T) {
 		t.Fatalf("Encoder.Encode failed: %v", err)
 	}
 
-	var out map[string]any
+	var v2 map[string]any
 
-	if err := NewDecoder(&buf).Decode(&out); err != nil {
+	if err := NewDecoder(&buf).Decode(&v2); err != nil {
 		t.Fatalf("Decoder.Decode failed: %v", err)
 	}
 
-	if !mapsDeepEqual(v, out) {
-		t.Errorf("Encoder/Decoder round-trip mismatch\nexpected: %#v\nactual:   %#v", v, out)
+	if !mapsDeepEqual(v, v2) {
+		t.Errorf("Encoder/Decoder round-trip mismatch\nexpected: %#v\nactual:   %#v", v, v2)
 	}
 }
 

@@ -9,7 +9,7 @@ func TestUnmarshal(t *testing.T) {
 	for _, tt := range []struct {
 		name string
 		data string
-		out  interface{}
+		v    any
 	}{
 		{"bool true", "true", new(bool)},
 		{"int", "42", new(int)},
@@ -25,11 +25,11 @@ func TestUnmarshal(t *testing.T) {
 		}{}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Unmarshal([]byte(tt.data), tt.out); err != nil {
+			if err := Unmarshal([]byte(tt.data), tt.v); err != nil {
 				t.Errorf("Unmarshal(%q) returned error: %v", tt.data, err)
 			}
 
-			if reflect.ValueOf(tt.out).Elem().IsZero() {
+			if reflect.ValueOf(tt.v).Elem().IsZero() {
 				t.Errorf("Unmarshal did not set value for %q", tt.data)
 			}
 		})
