@@ -77,23 +77,20 @@ func FuzzEncoderDecoder(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		var v map[string]any
+
 		if err := zon.Unmarshal(data, &v); err != nil {
 			return
 		}
 
 		var buf bytes.Buffer
 
-		enc := zon.NewEncoder(&buf)
-
-		if err := enc.Encode(v); err != nil {
+		if err := zon.Encode(&buf, v); err != nil {
 			t.Fatalf("Encoder failed: %v", err)
 		}
 
-		dec := zon.NewDecoder(&buf)
-
 		var out map[string]any
 
-		if err := dec.Decode(&out); err != nil {
+		if err := zon.Decode(&buf, &out); err != nil {
 			t.Fatalf("Decoder failed: %v", err)
 		}
 	})

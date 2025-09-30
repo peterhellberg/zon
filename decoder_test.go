@@ -6,7 +6,7 @@ import (
 )
 
 func TestDecoder(t *testing.T) {
-	b := []byte("{.a = 1}")
+	b := []byte(".{.a = 1}")
 
 	dec := NewDecoder(bytes.NewReader(b))
 

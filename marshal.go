@@ -9,106 +9,100 @@ import (
 )
 
 func Marshal(v interface{}) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := encodeValue(reflect.ValueOf(v), &buf); err != nil {
+	var b bytes.Buffer
+	if err := enc(reflect.ValueOf(v), &b); err != nil {
 		return nil, err
 	}
-	return buf.Bytes(), nil
+	return b.Bytes(), nil
 }
 
-func encodeValue(v reflect.Value, buf *bytes.Buffer) error {
+func enc(v reflect.Value, b *bytes.Buffer) error {
+	w, wb := b.WriteString, b.WriteByte
+
 	if !v.IsValid() {
-		buf.WriteString("null")
+		w("null")
 		return nil
 	}
 
 	switch v.Kind() {
 	case reflect.Bool:
-		if v.Bool() {
-			buf.WriteString("true")
-		} else {
-			buf.WriteString("false")
-		}
+		w(strconv.FormatBool(v.Bool()))
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		buf.WriteString(strconv.FormatInt(v.Int(), 10))
+		w(strconv.FormatInt(v.Int(), 10))
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		buf.WriteString(strconv.FormatUint(v.Uint(), 10))
+		w(strconv.FormatUint(v.Uint(), 10))
 	case reflect.Float32, reflect.Float64:
-		buf.WriteString(strconv.FormatFloat(v.Float(), 'g', -1, 64))
+		w(strconv.FormatFloat(v.Float(), 'g', -1, 64))
 	case reflect.String:
-		buf.WriteByte('"')
-		buf.WriteString(v.String())
-		buf.WriteByte('"')
+		wb('"')
+		w(v.String())
+		wb('"')
 	case reflect.Slice, reflect.Array:
-		buf.WriteByte('[')
+		wb('[')
 		for i := 0; i < v.Len(); i++ {
 			if i > 0 {
-				buf.WriteString(", ")
+				w(", ")
 			}
-			if err := encodeValue(v.Index(i), buf); err != nil {
+			if err := enc(v.Index(i), b); err != nil {
 				return err
 			}
 		}
-		buf.WriteByte(']')
-	case reflect.Map:
-		buf.WriteByte('{')
-		keys := v.MapKeys()
-		for i, k := range keys {
-			if i > 0 {
-				buf.WriteString(", ")
-			}
-			if k.Kind() == reflect.String {
-				keyStr := k.String()
-				if !strings.HasPrefix(keyStr, ".") {
-					buf.WriteByte('.')
+		wb(']')
+	case reflect.Map, reflect.Struct:
+		w(".{") // <-- leading dot before opening brace
+		first := true
+		if v.Kind() == reflect.Map {
+			for _, k := range v.MapKeys() {
+				if !first {
+					w(", ")
 				}
-				buf.WriteString(keyStr)
-			} else {
-				if err := encodeValue(k, buf); err != nil {
+				first = false
+				if k.Kind() == reflect.String {
+					s := k.String()
+					if !strings.HasPrefix(s, ".") {
+						wb('.')
+					}
+					w(s)
+				} else if err := enc(k, b); err != nil {
+					return err
+				}
+				w(" = ")
+				if err := enc(v.MapIndex(k), b); err != nil {
 					return err
 				}
 			}
-			buf.WriteString(" = ")
-			if err := encodeValue(v.MapIndex(k), buf); err != nil {
-				return err
+		} else {
+			for i := 0; i < v.NumField(); i++ {
+				f := v.Type().Field(i)
+				if f.PkgPath != "" {
+					continue
+				}
+				if !first {
+					w(", ")
+				}
+				first = false
+				name := f.Tag.Get("zon")
+				if name == "" {
+					name = f.Name
+				}
+				wb('.')
+				w(name)
+				w(" = ")
+				if err := enc(v.Field(i), b); err != nil {
+					return err
+				}
 			}
 		}
-		buf.WriteByte('}')
-
-	case reflect.Struct:
-		buf.WriteByte('{')
-		t := v.Type()
-		first := true
-		for i := 0; i < v.NumField(); i++ {
-			field := t.Field(i)
-			val := v.Field(i)
-			if field.PkgPath != "" { // skip unexported
-				continue
-			}
-			if !first {
-				buf.WriteString(", ")
-			}
-			first = false
-			name := field.Tag.Get("zon")
-			if name == "" {
-				name = field.Name
-			}
-			buf.WriteByte('.')
-			buf.WriteString(name)
-			buf.WriteString(" = ")
-			if err := encodeValue(val, buf); err != nil {
-				return err
-			}
-		}
-		buf.WriteByte('}')
+		wb('}')
 	case reflect.Pointer, reflect.Interface:
 		if v.IsNil() {
-			buf.WriteString("null")
+			w("null")
 		} else {
-			return encodeValue(v.Elem(), buf)
+			return enc(v.Elem(), b)
 		}
 	default:
 		return fmt.Errorf("zon: unsupported type %s", v.Type())
 	}
+
 	return nil
 }
