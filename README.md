@@ -41,22 +41,30 @@ type Example struct {
 func main() {
 	v := Example{Name: "Peter", Age: 42}
 
-	// Marshal to Zon
+	if err := run(v); err != nil {
+		panic(err)
+	}
+}
+
+func run(v Example) error {
 	data, err := zon.Marshal(v)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	fmt.Println(string(data))
+	// Output: {.name = "Peter", .age = 42}
 
-	// Unmarshal from Zon into a map
 	var out map[string]any
 
 	if err := zon.Unmarshal(data, &out); err != nil {
-		panic(err)
+		return err
 	}
 
 	fmt.Printf("%+v\n", out)
+	// Output: map[age:42 name:Peter]
+
+	return nil
 }
 ```
 
@@ -80,25 +88,80 @@ type Example struct {
 func main() {
 	v := Example{Name: "Peter"}
 
-	var buf bytes.Buffer
-
-	enc := zon.NewEncoder(&buf)
-
-	if err := enc.Encode(v); err != nil {
+	if err := run(v); err != nil {
 		panic(err)
 	}
+}
 
-	fmt.Println(buf.String()) // Output: {.name = "Peter"}
+func run(v Example) error {
+	var buf bytes.Buffer
+
+	if err := zon.NewEncoder(&buf).Encode(v); err != nil {
+		return err
+	}
+
+	fmt.Println(buf.String())
+	// Output: {.name = "Peter"}
 
 	var out Example
 
-	dec := zon.NewDecoder(&buf)
-
-	if err := dec.Decode(&out); err != nil {
-		panic(err)
+	if err := zon.NewDecoder(&buf).Decode(&out); err != nil {
+		return err
 	}
 
-	fmt.Printf("%+v\n", out) // Output: {Name:Peter}
+	fmt.Printf("%+v\n", out)
+	// Output: {Name:Peter}
+
+	return nil
+}
+```
+
+> [!TIP]
+> As a slight convenience, there are `zon.Encode` and `zon.Decode` functions;
+
+[embedmd]:# (examples/zon-encoder-decoder-convenience/zon-encoder-decoder-convenience.go)
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+
+	"github.com/peterhellberg/zon"
+)
+
+type Example struct {
+	Name string `zon:"name"`
+}
+
+func main() {
+	v := Example{Name: "Peter"}
+
+	if err := run(v); err != nil {
+		panic(err)
+	}
+}
+
+func run(v Example) error {
+	var buf bytes.Buffer
+
+	if err := zon.Encode(&buf, v); err != nil {
+		return err
+	}
+
+	fmt.Println(buf.String())
+	// Output: {.name = "Peter"}
+
+	var out Example
+
+	if err := zon.Decode(&buf, &out); err != nil {
+		return err
+	}
+
+	fmt.Printf("%+v\n", out)
+	// Output: {Name:Peter}
+
+	return nil
 }
 ```
 

@@ -14,23 +14,29 @@ type Example struct {
 func main() {
 	v := Example{Name: "Peter"}
 
-	var buf bytes.Buffer
-
-	enc := zon.NewEncoder(&buf)
-
-	if err := enc.Encode(v); err != nil {
+	if err := run(v); err != nil {
 		panic(err)
 	}
+}
 
-	fmt.Println(buf.String()) // Output: {.name = "Peter"}
+func run(v Example) error {
+	var buf bytes.Buffer
+
+	if err := zon.NewEncoder(&buf).Encode(v); err != nil {
+		return err
+	}
+
+	fmt.Println(buf.String())
+	// Output: {.name = "Peter"}
 
 	var out Example
 
-	dec := zon.NewDecoder(&buf)
-
-	if err := dec.Decode(&out); err != nil {
-		panic(err)
+	if err := zon.NewDecoder(&buf).Decode(&out); err != nil {
+		return err
 	}
 
-	fmt.Printf("%+v\n", out) // Output: {Name:Peter}
+	fmt.Printf("%+v\n", out)
+	// Output: {Name:Peter}
+
+	return nil
 }

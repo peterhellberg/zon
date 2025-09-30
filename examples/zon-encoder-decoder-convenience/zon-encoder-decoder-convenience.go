@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/peterhellberg/zon"
@@ -8,11 +9,10 @@ import (
 
 type Example struct {
 	Name string `zon:"name"`
-	Age  int    `zon:"age"`
 }
 
 func main() {
-	v := Example{Name: "Peter", Age: 42}
+	v := Example{Name: "Peter"}
 
 	if err := run(v); err != nil {
 		panic(err)
@@ -20,22 +20,23 @@ func main() {
 }
 
 func run(v Example) error {
-	data, err := zon.Marshal(v)
-	if err != nil {
+	var buf bytes.Buffer
+
+	if err := zon.Encode(&buf, v); err != nil {
 		return err
 	}
 
-	fmt.Println(string(data))
-	// Output: {.name = "Peter", .age = 42}
+	fmt.Println(buf.String())
+	// Output: {.name = "Peter"}
 
-	var out map[string]any
+	var out Example
 
-	if err := zon.Unmarshal(data, &out); err != nil {
+	if err := zon.Decode(&buf, &out); err != nil {
 		return err
 	}
 
 	fmt.Printf("%+v\n", out)
-	// Output: map[age:42 name:Peter]
+	// Output: {Name:Peter}
 
 	return nil
 }
