@@ -119,29 +119,8 @@ func run(v Example) error {
 > [!TIP]
 > As a slight convenience, there are `zon.Encode` and `zon.Decode` functions;
 
-[embedmd]:# (examples/zon-encoder-decoder-convenience/zon-encoder-decoder-convenience.go)
+[embedmd]:# (examples/zon-encoder-decoder-convenience/zon-encoder-decoder-convenience.go /func run/ $)
 ```go
-package main
-
-import (
-	"bytes"
-	"fmt"
-
-	"github.com/peterhellberg/zon"
-)
-
-type Example struct {
-	Name string `zon:"name"`
-}
-
-func main() {
-	v := Example{Name: "Peter"}
-
-	if err := run(v); err != nil {
-		panic(err)
-	}
-}
-
 func run(v Example) error {
 	var buf bytes.Buffer
 
