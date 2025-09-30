@@ -1,5 +1,7 @@
 package zon
 
+//go:generate go tool github.com/campoy/embedmd -w README.md
+
 import (
 	"bytes"
 	"fmt"
