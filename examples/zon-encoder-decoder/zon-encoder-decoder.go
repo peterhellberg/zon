@@ -22,7 +22,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println(buf.String())
+	fmt.Println(buf.String()) // Output: {.name = "Peter"}
 
 	var out Example
 
@@ -32,5 +32,5 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println(out)
+	fmt.Printf("%+v\n", out) // Output: {Name:Peter}
 }
