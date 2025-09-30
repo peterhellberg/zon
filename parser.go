@@ -216,6 +216,7 @@ func (p *parser) parseSlice(v reflect.Value) error {
 
 	p.pos += 2
 
+	// Always start with an empty slice (non-nil).
 	slice := reflect.MakeSlice(v.Type(), 0, 0)
 
 	for {
@@ -226,18 +227,15 @@ func (p *parser) parseSlice(v reflect.Value) error {
 
 		if p.data[p.pos] == '}' {
 			p.pos++
-
 			break
 		}
 
 		if p.data[p.pos] == ',' {
 			p.pos++
-
 			continue
 		}
 
 		elem := reflect.New(v.Type().Elem()).Elem()
-
 		if err := p.parseValue(elem); err != nil {
 			return err
 		}
@@ -245,6 +243,7 @@ func (p *parser) parseSlice(v reflect.Value) error {
 		slice = reflect.Append(slice, elem)
 	}
 
+	// Ensure non-nil slice is set
 	v.Set(slice)
 
 	return nil
@@ -634,13 +633,11 @@ func (p *parser) parseDynamicMapOrSlice() (reflect.Value, error) {
 
 		if p.data[p.pos] == '}' {
 			p.pos++
-
 			break
 		}
 
 		if p.data[p.pos] == ',' {
 			p.pos++
-
 			continue
 		}
 
@@ -650,6 +647,10 @@ func (p *parser) parseDynamicMapOrSlice() (reflect.Value, error) {
 		}
 
 		arr = append(arr, elem.Interface())
+	}
+
+	if arr == nil {
+		arr = []any{}
 	}
 
 	return reflect.ValueOf(arr), nil
