@@ -15,9 +15,9 @@ func TestUnmarshal(t *testing.T) {
 		{"int", "42", new(int)},
 		{"float", "3.14", new(float64)},
 		{"string", `"hello"`, new(string)},
-		{"slice", "[1,2,3]", &[]int{}},
+		{"slice", ".{1,2,3}", &[]int{}},
 		{"map", ".{.a = 1}", &map[string]int{}},
-		{"struct", ".{.x = 5, .y = .{.z = [1,2]}}", &struct {
+		{"struct", ".{.x = 5, .y = .{.z = .{1,2}}}", &struct {
 			X int `zon:"x"`
 			Y struct {
 				Z []int `zon:"z"`
