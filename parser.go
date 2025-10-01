@@ -103,12 +103,9 @@ func (p *parser) parseInt(v reflect.Value) error {
 			p.pos++
 		}
 
-		val, err := strconv.ParseInt(string(p.data[start:p.pos]), 0, v.Type().Bits())
-		if err != nil {
-			return fmt.Errorf("zon: invalid hex int literal at pos %d: %w", start, err)
+		if v.CanSet() {
+			v.SetString(string(p.data[start:p.pos]))
 		}
-
-		v.SetInt(val)
 
 		return nil
 	}
@@ -137,12 +134,9 @@ func (p *parser) parseUint(v reflect.Value) error {
 			p.pos++
 		}
 
-		val, err := strconv.ParseUint(string(p.data[start:p.pos]), 0, v.Type().Bits())
-		if err != nil {
-			return fmt.Errorf("zon: invalid hex uint literal at pos %d: %w", start, err)
+		if v.CanSet() {
+			v.SetString(string(p.data[start:p.pos]))
 		}
-
-		v.SetUint(val)
 
 		return nil
 	}
@@ -479,21 +473,15 @@ func (p *parser) parseNumberDynamic() (reflect.Value, error) {
 	}
 
 	if hasPrefixAt(p.data, p.pos, "0x") || hasPrefixAt(p.data, p.pos, "0X") {
-		hexStart := p.pos
 		p.pos += 2
 
 		for p.pos < len(p.data) && isHexDigit(p.data[p.pos]) {
 			p.pos++
 		}
 
-		hexStr := string(p.data[hexStart:p.pos])
+		hexStr := string(p.data[start:p.pos])
 
-		val, err := strconv.ParseUint(hexStr, 0, 64)
-		if err != nil {
-			return reflect.Value{}, fmt.Errorf("zon: invalid hex literal at pos %d: %w", hexStart, err)
-		}
-
-		return reflect.ValueOf(val), nil
+		return reflect.ValueOf(hexStr), nil
 	}
 
 	dotSeen := false
