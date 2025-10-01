@@ -436,7 +436,7 @@ func (p *parser) parseDynamic() (reflect.Value, error) {
 			return reflect.Value{}, fmt.Errorf("zon: invalid identifier at pos %d", start)
 		}
 
-		return reflect.ValueOf(ident), nil
+		return reflect.ValueOf("." + ident), nil
 	default:
 		if isDigit(c) || c == '+' || c == '-' {
 			return p.parseNumberDynamic()
