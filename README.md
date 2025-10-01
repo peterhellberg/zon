@@ -1,5 +1,10 @@
 # ZON encoding/decoding for Go ⚡
 
+[![Build status](https://github.com/peterhellberg/zon/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/peterhellberg/zon/actions/workflows/test.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/peterhellberg/zon?style=flat)](https://goreportcard.com/report/github.com/peterhellberg/zon)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://pkg.go.dev/github.com/peterhellberg/zon)
+[![License MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/peterhellberg/zon#license-mit)
+
 `zon` is a Go library for marshaling and unmarshaling [ZON](https://ziglang.org/) data,
 similar in usage to `encoding/json`.
 
@@ -226,9 +231,7 @@ $ cat testdata/comments.zon | tee /dev/stderr | zon -j | jq
 }
 ```
 
-## License
-
-MIT License
+## License (MIT)
 
 [embedmd]:# (LICENSE text)
 ```text
