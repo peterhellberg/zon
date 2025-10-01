@@ -8,7 +8,7 @@ import (
 )
 
 func FuzzStructRoundTrip(f *testing.F) {
-	f.Add([]byte(`.{.name="Alice",.age=30,.active=true,.meta={.nested=[1,2,3],.flag=true}}`))
+	f.Add([]byte(`.{.name="Alice",.age=30,.active=true,.meta={.nested=.{1,2,3},.flag=true}}`))
 	f.Add([]byte(`.{.name="Bob",.age=42,.active=false,.meta=null}`))
 
 	f.Fuzz(func(t *testing.T, data []byte) {
@@ -26,7 +26,7 @@ func FuzzStructRoundTrip(f *testing.F) {
 
 func FuzzMapRoundTrip(f *testing.F) {
 	f.Add([]byte(`.{.name="Peter",.age=42}`))
-	f.Add([]byte(`.{.foo="bar",.baz=[1,2,3]}`))
+	f.Add([]byte(`.{.foo="bar",.baz=.{1,2,3}}`))
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		var v map[string]any
