@@ -39,7 +39,7 @@ func marshal(v reflect.Value, b *bytes.Buffer) error {
 		w(strconv.FormatFloat(v.Float(), 'g', -1, 64))
 	case reflect.String:
 		s := v.String()
-		if isHexLiteral(s) {
+		if isDotLiteral(s) || isHexLiteral(s) {
 			w(s)
 		} else {
 			wb('"')
@@ -169,6 +169,27 @@ func isEmptyValue(v reflect.Value) bool {
 	default:
 		return false
 	}
+}
+
+func isDotLiteral(s string) bool {
+	if len(s) < 2 {
+		return false
+	}
+
+	if s[0] != '.' {
+		return false
+	}
+
+	for _, c := range s[1:] {
+		if !((c >= 'a' && c <= 'z') ||
+			(c >= 'A' && c <= 'Z') ||
+			(c >= '0' && c <= '9') ||
+			c == '_') {
+			return false
+		}
+	}
+
+	return true
 }
 
 func isHexLiteral(s string) bool {
