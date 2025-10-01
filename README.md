@@ -158,7 +158,7 @@ $ go install https://github.com/peterhellberg/zon/cmd/zon@latest
 ```console
 $ echo '{"langs":["Zig", "Go"],"none":null}' | zon | zq
 ```
-```zon
+```zig
 .{
     .langs = .{
         "Zig",
@@ -197,7 +197,7 @@ $ cat testdata/build.zig.zon | zon -j | jq
 ```console
 $ cat testdata/comments.zon | tee /dev/stderr | zon -j | jq
 ```
-```zon
+```zig
 // Comment before object
 .{
     .name = .comment,
