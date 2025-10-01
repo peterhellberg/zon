@@ -22,13 +22,13 @@ func main() {
 }
 
 func run(v Example) error {
-	data, err := zon.Marshal(v)
+	data, err := zon.Marshal(v, zon.Indent(""))
 	if err != nil {
 		return err
 	}
 
 	fmt.Println(string(data))
-	// Output: .{.name = "Peter", .age = 42, .list = .{}}
+	// Output: .{ .name = "Peter", .age = 42, .list = .{ }, }
 
 	var v2 map[string]any
 

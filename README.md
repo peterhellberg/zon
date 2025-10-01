@@ -52,13 +52,13 @@ func main() {
 }
 
 func run(v Example) error {
-	data, err := zon.Marshal(v)
+	data, err := zon.Marshal(v, zon.Indent(""))
 	if err != nil {
 		return err
 	}
 
 	fmt.Println(string(data))
-	// Output: .{.name = "Peter", .age = 42, .list = .{}}
+	// Output: .{ .name = "Peter", .age = 42, .list = .{ }, }
 
 	var v2 map[string]any
 
@@ -101,12 +101,12 @@ func main() {
 func run(v Example) error {
 	var buf bytes.Buffer
 
-	if err := zon.NewEncoder(&buf).Encode(v); err != nil {
+	if err := zon.NewEncoder(&buf, zon.Indent("")).Encode(v); err != nil {
 		return err
 	}
 
 	fmt.Println(buf.String())
-	// Output: .{.name = "Peter"}
+	// Output: .{ .name = "Peter", }
 
 	var v2 Example
 
@@ -129,12 +129,12 @@ func run(v Example) error {
 func run(v Example) error {
 	var buf bytes.Buffer
 
-	if err := zon.Encode(&buf, v); err != nil {
+	if err := zon.Encode(&buf, v, zon.Indent("")); err != nil {
 		return err
 	}
 
 	fmt.Println(buf.String())
-	// Output: .{.name = "Peter"}
+	// Output: .{ .name = "Peter", }
 
 	var v2 Example
 

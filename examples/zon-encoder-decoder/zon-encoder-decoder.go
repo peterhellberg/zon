@@ -22,12 +22,12 @@ func main() {
 func run(v Example) error {
 	var buf bytes.Buffer
 
-	if err := zon.NewEncoder(&buf).Encode(v); err != nil {
+	if err := zon.NewEncoder(&buf, zon.Indent("")).Encode(v); err != nil {
 		return err
 	}
 
 	fmt.Println(buf.String())
-	// Output: .{.name = "Peter"}
+	// Output: .{ .name = "Peter", }
 
 	var v2 Example
 
