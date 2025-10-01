@@ -18,13 +18,18 @@ func main() {
 }
 
 func run(r io.Reader, w io.Writer) error {
-	i := flag.String("i", "   ", "ZON indentation per level")
+	i := flag.String("i", "    ", "Indentation per level")
 	j := flag.Bool("j", false, "Convert ZON to JSON (default: false)")
 
 	flag.Parse()
 
 	if *j {
-		return convert(zon.NewDecoder(r), json.NewEncoder(w))
+		dec := zon.NewDecoder(r)
+		enc := json.NewEncoder(w)
+
+		enc.SetIndent("", *i)
+
+		return convert(dec, enc)
 	}
 
 	return convert(json.NewDecoder(r), zon.NewEncoder(w, zon.Indent(*i)))

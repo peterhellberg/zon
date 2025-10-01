@@ -158,26 +158,23 @@ which can be used to convert between **ZON** and **JSON**.
 $ go install https://github.com/peterhellberg/zon/cmd/zon@latest
 ```
 
+> [!TIP]
+> You can set the indentation per level by using the `-i` flag. (default `"    "`)
+
 ### JSON to ZON
 
 ```console
-$ echo '{"langs":["Zig", "Go"],"none":null}' | zon | zq
+$ echo '{"langs":["Zig", "Go"],"none":null}' | zon | zq -q 'langs'
 ```
 ```zig
 .{
-    .langs = .{
-        "Zig",
-        "Go",
-    },
-    .none = null,
+    "Zig",
+    "Go",
 }
 ```
 
 > [!NOTE]
 > `zq` in the example above is <https://codeberg.org/tensorush/zq>
-
-> [!TIP]
-> You can set the ZON indentation per level by using the `-i` flag. (default `"    "`)
 
 ### ZON to JSON
 
