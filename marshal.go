@@ -11,16 +11,16 @@ import (
 func Marshal(v any) ([]byte, error) {
 	var b bytes.Buffer
 
-	if err := marshal(reflect.ValueOf(v), &b); err != nil {
+	if err := marshal(reflect.ValueOf(v), &b, 0); err != nil {
 		return nil, err
 	}
 
-	_, err := b.WriteString("\n")
+	_ = b.WriteByte('\n')
 
-	return b.Bytes(), err
+	return b.Bytes(), nil
 }
 
-func marshal(v reflect.Value, b *bytes.Buffer) error {
+func marshal(v reflect.Value, b *bytes.Buffer, indent int) error {
 	w, wb := b.WriteString, b.WriteByte
 
 	if !v.IsValid() {
@@ -39,6 +39,7 @@ func marshal(v reflect.Value, b *bytes.Buffer) error {
 		w(strconv.FormatFloat(v.Float(), 'g', -1, 64))
 	case reflect.String:
 		s := v.String()
+
 		if isDotLiteral(s) || isHexLiteral(s) {
 			w(s)
 		} else {
@@ -46,102 +47,137 @@ func marshal(v reflect.Value, b *bytes.Buffer) error {
 			w(s)
 			wb('"')
 		}
-	case reflect.Slice, reflect.Array, reflect.Map, reflect.Struct:
-		w(".{")
-		first := true
-		switch v.Kind() {
-		case reflect.Slice, reflect.Array:
-			for i := 0; i < v.Len(); i++ {
-				if !first {
-					w(", ")
-				}
-				first = false
-				if err := marshal(v.Index(i), b); err != nil {
-					return err
-				}
+	case reflect.Slice, reflect.Array:
+		w(".{\n")
+
+		for i := 0; i < v.Len(); i++ {
+			writeIndent(b, indent+1)
+
+			if err := marshal(v.Index(i), b, indent+1); err != nil {
+				return err
 			}
-		case reflect.Map:
-			for _, k := range v.MapKeys() {
-				if !first {
-					w(", ")
+
+			w(",\n")
+		}
+
+		writeIndent(b, indent)
+
+		wb('}')
+	case reflect.Map:
+		w(".{\n")
+
+		keys := v.MapKeys()
+
+		for i, k := range keys {
+			writeIndent(b, indent+1)
+
+			if k.Kind() == reflect.String {
+				s := k.String()
+				if !strings.HasPrefix(s, ".") {
+					wb('.')
 				}
-				first = false
-				if k.Kind() == reflect.String {
-					s := k.String()
-					if !strings.HasPrefix(s, ".") {
-						wb('.')
-					}
-					w(s)
-				} else if err := marshal(k, b); err != nil {
-					return err
-				}
-				w(" = ")
-				if err := marshal(v.MapIndex(k), b); err != nil {
-					return err
-				}
+
+				w(s)
+			} else if err := marshal(k, b, indent+1); err != nil {
+				return err
 			}
-		case reflect.Struct:
-			for i := 0; i < v.NumField(); i++ {
-				f := v.Type().Field(i)
-				if f.PkgPath != "" {
-					continue
-				}
 
-				tag := f.Tag.Get("zon")
+			w(" = ")
 
-				var name string
-				var omitempty bool
+			value := v.MapIndex(k)
 
-				if tag == "" {
-					name = f.Name
-				} else {
-					parts := strings.Split(tag, ",")
-					if parts[0] != "" {
-						name = strings.TrimSpace(parts[0])
-					} else {
-						name = f.Name
-					}
+			if err := marshal(value, b, indent+1); err != nil {
+				return err
+			}
 
-					for _, instr := range parts[1:] {
-						if strings.TrimSpace(instr) == "omitempty" {
-							omitempty = true
-						}
-					}
-				}
+			w(",")
 
-				fv := v.Field(i)
-
-				if omitempty && isEmptyValue(fv) {
-					continue // skip empty field
-				}
-
-				if !first {
-					w(", ")
-				}
-
-				first = false
-
-				wb('.')
-				w(name)
-				w(" = ")
-
-				if err := marshal(fv, b); err != nil {
-					return err
-				}
+			if i != len(keys)-1 {
+				w("\n")
+			} else {
+				w("\n")
 			}
 		}
+
+		writeIndent(b, indent)
+
+		wb('}')
+	case reflect.Struct:
+		w(".{\n")
+
+		first := true
+
+		for i := 0; i < v.NumField(); i++ {
+			f := v.Type().Field(i)
+
+			if f.PkgPath != "" {
+				continue
+			}
+
+			var (
+				fv        = v.Field(i)
+				tag       = f.Tag.Get("zon")
+				name      = f.Name
+				omitempty = false
+			)
+
+			if tag != "" {
+				parts := strings.Split(tag, ",")
+				if parts[0] != "" {
+					name = strings.TrimSpace(parts[0])
+				}
+
+				for _, instr := range parts[1:] {
+					if strings.TrimSpace(instr) == "omitempty" {
+						omitempty = true
+					}
+				}
+			}
+
+			if omitempty && isEmptyValue(fv) {
+				continue
+			}
+
+			if !first {
+				w("\n")
+			}
+			first = false
+
+			writeIndent(b, indent+1)
+
+			wb('.')
+			w(name)
+			w(" = ")
+
+			if err := marshal(fv, b, indent+1); err != nil {
+				return err
+			}
+
+			w(",")
+		}
+
+		w("\n")
+
+		writeIndent(b, indent)
+
 		wb('}')
 	case reflect.Pointer, reflect.Interface:
 		if v.IsNil() {
 			w("null")
 		} else {
-			return marshal(v.Elem(), b)
+			return marshal(v.Elem(), b, indent)
 		}
 	default:
 		return fmt.Errorf("zon: unsupported type %s", v.Type())
 	}
 
 	return nil
+}
+
+func writeIndent(b *bytes.Buffer, indent int) {
+	for i := 0; i < indent; i++ {
+		b.WriteString("    ")
+	}
 }
 
 func isEmptyValue(v reflect.Value) bool {
@@ -172,11 +208,7 @@ func isEmptyValue(v reflect.Value) bool {
 }
 
 func isDotLiteral(s string) bool {
-	if len(s) < 2 {
-		return false
-	}
-
-	if s[0] != '.' {
+	if len(s) < 2 || s[0] != '.' {
 		return false
 	}
 
@@ -205,7 +237,6 @@ func isHexLiteral(s string) bool {
 		if !((c >= '0' && c <= '9') ||
 			(c >= 'a' && c <= 'f') ||
 			(c >= 'A' && c <= 'F')) {
-
 			return false
 		}
 	}

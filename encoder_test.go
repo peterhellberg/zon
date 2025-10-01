@@ -12,8 +12,8 @@ func TestEncoder(t *testing.T) {
 		input map[string]int
 		want  string
 	}{
-		{"key with dot", map[string]int{".a": 1}, ".{.a = 1}\n"},
-		{"key without dot", map[string]int{"b": 2}, ".{.b = 2}\n"},
+		{"key with dot", map[string]int{".a": 1}, ".{\n    .a = 1,\n}\n"},
+		{"key without dot", map[string]int{"b": 2}, ".{\n    .b = 2,\n}\n"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
