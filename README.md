@@ -179,9 +179,9 @@ $ cat testdata/build.zig.zon | zon -j | jq
 ```json
 {
   "dependencies": [],
-  "fingerprint": 11089329437232087000,
+  "fingerprint": "0x99e5365e8f803dab",
   "minimum_zig_version": "0.16.0-dev.205+4c0127566",
-  "name": "testdata",
+  "name": ".testdata",
   "paths": [
     "build.zig",
     "build.zig.zon",
@@ -195,9 +195,13 @@ $ cat testdata/build.zig.zon | zon -j | jq
 > `jq` in the example above is <https://jqlang.org/>
 
 ```console
-$ cat testdata/comments.zon | tee /dev/stderr | zon -j
+$ cat testdata/comments.zon | tee /dev/stderr | zon -j | jq
+```
+```zon
 // Comment before object
 .{
+    .name = .comment,
+    .fingerprint = 0xcd164bbdb7002101,
     .field = "with a string", // Trailing comment
 
     // Comment between fields
@@ -208,7 +212,18 @@ $ cat testdata/comments.zon | tee /dev/stderr | zon -j
 }
 ```
 ```json
-{"another":{"value":["first",2,false]},"field":"with a string"}
+{
+  "another": {
+    "value": [
+      "first",
+      2,
+      false
+    ]
+  },
+  "field": "with a string",
+  "fingerprint": "0xcd164bbdb7002101",
+  "name": ".comment"
+}
 ```
 
 ## License
