@@ -18,6 +18,7 @@ func main() {
 }
 
 func run(r io.Reader, w io.Writer) error {
+	i := flag.String("i", "   ", "ZON indentation per level")
 	j := flag.Bool("j", false, "Convert ZON to JSON (default: false)")
 
 	flag.Parse()
@@ -26,7 +27,7 @@ func run(r io.Reader, w io.Writer) error {
 		return convert(zon.NewDecoder(r), json.NewEncoder(w))
 	}
 
-	return convert(json.NewDecoder(r), zon.NewEncoder(w))
+	return convert(json.NewDecoder(r), zon.NewEncoder(w, zon.Indent(*i)))
 }
 
 type Decoder interface{ Decode(v any) error }

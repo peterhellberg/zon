@@ -8,10 +8,16 @@ import (
 	"strings"
 )
 
-func Marshal(v any) ([]byte, error) {
+func Marshal(v any, opts ...Option) ([]byte, error) {
 	var b bytes.Buffer
 
-	if err := marshal(reflect.ValueOf(v), &b, 0); err != nil {
+	o := defaultOptions()
+
+	for _, opt := range opts {
+		opt(&o)
+	}
+
+	if err := marshal(reflect.ValueOf(v), &b, o, 0); err != nil {
 		return nil, err
 	}
 
@@ -20,8 +26,12 @@ func Marshal(v any) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func marshal(v reflect.Value, b *bytes.Buffer, indent int) error {
-	w, wb := b.WriteString, b.WriteByte
+func marshal(v reflect.Value, b *bytes.Buffer, o Options, l int) error {
+	w, wb, n := b.WriteString, b.WriteByte, "\n"
+
+	if o.Indent == "" {
+		n = " "
+	}
 
 	if !v.IsValid() {
 		w("null")
@@ -48,28 +58,28 @@ func marshal(v reflect.Value, b *bytes.Buffer, indent int) error {
 			wb('"')
 		}
 	case reflect.Slice, reflect.Array:
-		w(".{\n")
+		w(".{" + n)
 
 		for i := 0; i < v.Len(); i++ {
-			writeIndent(b, indent+1)
+			writeIndent(b, o, l+1)
 
-			if err := marshal(v.Index(i), b, indent+1); err != nil {
+			if err := marshal(v.Index(i), b, o, l+1); err != nil {
 				return err
 			}
 
-			w(",\n")
+			w("," + n)
 		}
 
-		writeIndent(b, indent)
+		writeIndent(b, o, l)
 
 		wb('}')
 	case reflect.Map:
-		w(".{\n")
+		w(".{" + n)
 
 		keys := v.MapKeys()
 
 		for i, k := range keys {
-			writeIndent(b, indent+1)
+			writeIndent(b, o, l+1)
 
 			if k.Kind() == reflect.String {
 				s := k.String()
@@ -78,7 +88,7 @@ func marshal(v reflect.Value, b *bytes.Buffer, indent int) error {
 				}
 
 				w(s)
-			} else if err := marshal(k, b, indent+1); err != nil {
+			} else if err := marshal(k, b, o, l+1); err != nil {
 				return err
 			}
 
@@ -86,24 +96,24 @@ func marshal(v reflect.Value, b *bytes.Buffer, indent int) error {
 
 			value := v.MapIndex(k)
 
-			if err := marshal(value, b, indent+1); err != nil {
+			if err := marshal(value, b, o, l+1); err != nil {
 				return err
 			}
 
 			w(",")
 
 			if i != len(keys)-1 {
-				w("\n")
+				w(n)
 			} else {
-				w("\n")
+				w(n)
 			}
 		}
 
-		writeIndent(b, indent)
+		writeIndent(b, o, l)
 
 		wb('}')
 	case reflect.Struct:
-		w(".{\n")
+		w(".{" + n)
 
 		first := true
 
@@ -139,33 +149,33 @@ func marshal(v reflect.Value, b *bytes.Buffer, indent int) error {
 			}
 
 			if !first {
-				w("\n")
+				w(n)
 			}
 			first = false
 
-			writeIndent(b, indent+1)
+			writeIndent(b, o, l+1)
 
 			wb('.')
 			w(name)
 			w(" = ")
 
-			if err := marshal(fv, b, indent+1); err != nil {
+			if err := marshal(fv, b, o, l+1); err != nil {
 				return err
 			}
 
 			w(",")
 		}
 
-		w("\n")
+		w(n)
 
-		writeIndent(b, indent)
+		writeIndent(b, o, l)
 
 		wb('}')
 	case reflect.Pointer, reflect.Interface:
 		if v.IsNil() {
 			w("null")
 		} else {
-			return marshal(v.Elem(), b, indent)
+			return marshal(v.Elem(), b, o, l)
 		}
 	default:
 		return fmt.Errorf("zon: unsupported type %s", v.Type())
@@ -174,9 +184,9 @@ func marshal(v reflect.Value, b *bytes.Buffer, indent int) error {
 	return nil
 }
 
-func writeIndent(b *bytes.Buffer, indent int) {
-	for i := 0; i < indent; i++ {
-		b.WriteString("    ")
+func writeIndent(b *bytes.Buffer, o Options, l int) {
+	for i := 0; i < l; i++ {
+		b.WriteString(o.Indent)
 	}
 }
 

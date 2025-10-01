@@ -4,18 +4,19 @@ import "io"
 
 type Encoder struct {
 	w io.Writer
+	o []Option
 }
 
-func Encode(w io.Writer, v any) error {
-	return NewEncoder(w).Encode(v)
+func Encode(w io.Writer, v any, opts ...Option) error {
+	return NewEncoder(w, opts...).Encode(v)
 }
 
-func NewEncoder(w io.Writer) *Encoder {
-	return &Encoder{w: w}
+func NewEncoder(w io.Writer, opts ...Option) *Encoder {
+	return &Encoder{w: w, o: opts}
 }
 
 func (e *Encoder) Encode(v any) error {
-	data, err := Marshal(v)
+	data, err := Marshal(v, e.o...)
 	if err != nil {
 		return err
 	}

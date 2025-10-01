@@ -176,6 +176,9 @@ $ echo '{"langs":["Zig", "Go"],"none":null}' | zon | zq
 > [!NOTE]
 > `zq` in the example above is <https://codeberg.org/tensorush/zq>
 
+> [!TIP]
+> You can set the ZON indentation per level by using the `-i` flag. (default `"    "`)
+
 ### ZON to JSON
 
 ```console
