@@ -38,9 +38,14 @@ func marshal(v reflect.Value, b *bytes.Buffer) error {
 	case reflect.Float32, reflect.Float64:
 		w(strconv.FormatFloat(v.Float(), 'g', -1, 64))
 	case reflect.String:
-		wb('"')
-		w(v.String())
-		wb('"')
+		s := v.String()
+		if isHexLiteral(s) {
+			w(s)
+		} else {
+			wb('"')
+			w(s)
+			wb('"')
+		}
 	case reflect.Slice, reflect.Array, reflect.Map, reflect.Struct:
 		w(".{")
 		first := true
@@ -164,4 +169,25 @@ func isEmptyValue(v reflect.Value) bool {
 	default:
 		return false
 	}
+}
+
+func isHexLiteral(s string) bool {
+	if len(s) < 3 {
+		return false
+	}
+
+	if !(strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X")) {
+		return false
+	}
+
+	for _, c := range s[2:] {
+		if !((c >= '0' && c <= '9') ||
+			(c >= 'a' && c <= 'f') ||
+			(c >= 'A' && c <= 'F')) {
+
+			return false
+		}
+	}
+
+	return true
 }
