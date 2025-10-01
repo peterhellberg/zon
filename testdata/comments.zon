@@ -1,5 +1,7 @@
 // Comment before object
 .{
+    .name = .comment,
+    .fingerprint = 0xcd164bbdb7002101,
     .field = "with a string", // Trailing comment
 
     // Comment between fields
